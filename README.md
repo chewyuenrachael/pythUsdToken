@@ -162,8 +162,6 @@ contract PythUSDToken is ERC20 {
 
 - **Dynamic USD/ETH Rate**: Currently, the contract uses a hardcoded USD/ETH rate. Integrating a live data feed for USD/ETH from API3 or another oracle provider could enhance accuracy.
 
-- **ETH Reserve Management**: Implement mechanisms to ensure the contract always has enough ETH to fulfill burn requests, such as capping token supply or adding external funding sources.
-
 - **Fallback Oracle**: Introduce a fallback mechanism in case the primary oracle fails to provide data.
 
 ---
@@ -181,6 +179,3 @@ Yes, the contract currently uses a hardcoded value, but it can be updated to fet
 
 ### **4. Is there a maximum supply of tokens?**
 Currently, there is no cap on the total supply of tokens. However, a cap can be introduced if needed.
-
-### **5. What happens if the contract runs out of ETH?**
-If the contract does not have enough ETH to fulfill burn requests, the transaction will fail. Implementing ETH reserve management strategies is recommended < working on this.
