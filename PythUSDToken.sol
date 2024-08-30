@@ -21,6 +21,8 @@ contract PythUSDToken is ERC20 {
     // Function to get the latest PYTH/USD price from the API3 data feed
     function fetchPythPrice() public view returns (uint256) {
         (int224 pythPrice, ) = IProxy(pythUSDProxy).read();
+
+        // might need to improve this check
         require(pythPrice > 0, "Invalid PYTH price"); // Checks if the price is valid
         return uint256(int256(pythPrice)); // Converts the int224 price to uint256
     }
