@@ -1,181 +1,179 @@
-### PythUSDToken Project
+# 🏦 PythUSDToken – ETH-Powered Dynamic Token Minting with API3 Price Feeds
 
 ---
 
-## **Project Overview**
+## 📖 Overview
 
-The **PythUSDToken** project is a Solidity-based smart contract deployed on the Zircuit testnet. This project leverages the API3 decentralized oracle network to fetch the real-time price of the PYTH/USD pair and allows users to mint and burn Pyth tokens by interacting with the contract using ETH. 
+**PythUSDToken** is a smart contract deployed on the **Zircuit Testnet** that allows users to seamlessly **mint and burn ERC20 tokens** based on the **live PYTH/USD price**, fetched via the decentralized oracle network **API3**.
 
-This contract provides a mechanism for users to mint new tokens by sending ETH and burn their tokens to redeem ETH. The value of the tokens is dynamically calculated based on the latest price data fetched from the API3 PYTH/USD data feed.
+By sending ETH, users mint PUT tokens priced dynamically against the real-world PYTH price. Conversely, users can burn PUT tokens to redeem ETH, maintaining a **real-time, price-pegged experience**.
 
----
-
-## **Features**
-
-1. **Minting PythUSD Tokens**: Users can mint PythUSD tokens by sending ETH to the contract. The number of tokens minted is determined by the current exchange rate between PYTH and USD, as provided by the API3 data feed.
-
-2. **Burning PythUSD Tokens**: Users can burn their PythUSD tokens to redeem ETH. The amount of ETH returned is calculated based on the current PYTH/USD price.
-
-3. **Real-time Price Fetching**: The contract fetches the latest PYTH/USD price from the API3 data feed, ensuring that the token minting and burning operations reflect the most accurate market data.
-
-4. **Slippage Protection**: During minting, users can specify a minimum number of tokens they expect to receive, preventing transactions from proceeding if the price fluctuates too much.
+> This project demonstrates decentralized asset pegging, real-time oracle integration, and secure mint-burn flows on Ethereum-compatible networks.
 
 ---
 
-## **Smart Contract Details**
+## ✨ Features
 
-### **Contract Structure**
+| Feature | Description |
+|:--------|:------------|
+| 🎯 **Dynamic Token Pricing** | Mint and burn tokens based on the real-time PYTH/USD price from an API3 oracle. |
+| 🔒 **Slippage Protection** | Specify minimum acceptable tokens when minting to protect against price volatility. |
+| 📈 **ETH-to-Token and Token-to-ETH Conversion** | Fully bidirectional: deposit ETH to mint, burn tokens to redeem ETH. |
+| 🛡️ **Oracle Integrity Check** | Ensures fetched prices are valid (>0) before allowing any transaction. |
+| 🔄 **ERC20 Standard Compliant** | Extends OpenZeppelin’s robust ERC20 implementation for maximum compatibility. |
+| 🏛️ **Decentralized Data Feed** | Fetches PYTH/USD prices directly from API3’s serverless, decentralized data sources. |
 
-- **`PythUSDToken` Contract**: An ERC20 token contract that interacts with the API3 data feed to enable minting and burning of tokens based on the latest PYTH/USD price.
+---
 
-### **Code Explanation**
+## 🧩 Contract Details
 
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+| Item | Description |
+|:----|:------------|
+| **Name** | `PythUSDToken` |
+| **Symbol** | `PUT` |
+| **Network** | Zircuit Testnet |
+| **Chain ID** | 48899 |
+| **Oracles Used** | API3 ServerV1 + Proxy |
+| **Hardcoded ETH/USD** | 2400 USD (can be made dynamic) |
+| **Decimals** | 18 |
 
-// Importing API3 proxy interface to fetch the latest value of PYTH/USD
-import "@api3/contracts/api3-server-v1/proxies/interfaces/IProxy.sol";
-// Importing OpenZeppelin ERC20 implementation for standard token functionalities
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+---
 
-contract PythUSDToken is ERC20 {
+## 🏛 Smart Contract Architecture
 
-    // Address of the API3 proxy contract used to fetch PYTH/USD price
-    address public pythUSDProxy;
+### 📜 Contract Summary
+- Inherits from OpenZeppelin’s `ERC20`.
+- Uses the `IProxy` interface from API3 to fetch **live PYTH/USD** pricing.
+- Fixed conversion rate of **2400 USD/ETH** used to align ETH input with USD valuations.
 
-    // Fixed exchange rate of 2400 USD per ETH, with 8 decimal places for precision
-    uint256 public constant usdPerETH = 2400 * 1e8; 
+### 🧮 Key Functions
 
-    // Constructor to initialize the proxy address and set the token details
-    constructor (address _pythUSDProxy) ERC20("PythUSDToken", "PUT") {
-        pythUSDProxy = _pythUSDProxy; // Assign the proxy address for fetching PYTH/USD price
-    }
+| Function | Purpose |
+|:---------|:--------|
+| `fetchPythPrice()` | Pulls latest PYTH/USD price from the API3 proxy contract. |
+| `mintToken(minTokensToMint)` | Users send ETH to mint PUT tokens priced based on the live PYTH/USD feed. |
+| `burnToken(amount)` | Users burn PUT tokens and receive ETH calculated by current market price. |
 
-    // Function to fetch the latest PYTH/USD price from the API3 data feed
-    function fetchPythPrice() public view returns (uint256) {
-        (int224 pythPrice, ) = IProxy(pythUSDProxy).read(); // Read the price from the proxy
-        require(pythPrice > 0, "Invalid PYTH price"); // Ensure the fetched price is valid
-        return uint256(int256(pythPrice)); // Convert the price to uint256 for use in calculations
-    }
+---
 
-    // Function to mint tokens by sending ETH
-    function mintToken(uint256 minTokensToMint) external payable {
-        uint256 pythPrice = fetchPythPrice(); // Fetch the latest PYTH/USD price
+## 📜 Full Smart Contract Flow
 
-        // Calculate the number of tokens to mint based on ETH sent, fixed USD/ETH rate, and PYTH/USD price
-        uint256 expectedTokens = (msg.value * usdPerETH) / pythPrice; 
+### Minting PUT Tokens
+1. User sends ETH with a call to `mintToken()`.
+2. Contract fetches the latest PYTH/USD price via API3.
+3. Calculates how many PUT tokens the user should receive.
+4. Checks against user's minimum expected tokens to prevent slippage.
+5. Mints PUT tokens and assigns them to the user’s wallet.
 
-        // Ensure the number of tokens to be minted meets or exceeds the user's minimum expectation
-        require(expectedTokens >= minTokensToMint, "Below minimum expected tokens");
+### Burning PUT Tokens
+1. User calls `burnToken()` specifying the number of PUT tokens to burn.
+2. Contract fetches the latest PYTH/USD price.
+3. Calculates the amount of ETH to return based on the burn amount and live price.
+4. Burns the tokens and transfers the corresponding ETH back to the user.
 
-        _mint(msg.sender, expectedTokens); // Mint the tokens and assign them to the user
-    }
+---
 
-    // Function to burn tokens and receive ETH
-    function burnToken(uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "Insufficient token balance to burn"); // Ensure the user has enough tokens to burn
+## 🔥 Example Calculation
 
-        uint256 pythPrice = fetchPythPrice(); // Get the latest PYTH/USD price
-        uint256 ethToReturn = (amount * pythPrice) / usdPerETH; // Calculate the amount of ETH to return
+Suppose:
 
-        require(address(this).balance >= ethToReturn, "Contract has insufficient ETH"); // Ensure the contract has enough ETH to fulfill the request
+- Fixed `usdPerETH = 2400 * 1e8`
+- Fetched `pythPrice = 1000 * 1e8` (PYTH = 1000 USD)
 
-        _burn(msg.sender, amount); // Burn the specified amount of tokens
-        payable(msg.sender).transfer(ethToReturn); // Transfer the corresponding amount of ETH back to the user
-    }
-}
+**Mint Scenario**:
+
+```bash
+User sends 0.01 ETH
+Tokens minted = (0.01 * 2400 * 1e8) / (1000 * 1e8) = 0.024 PUT
 ```
 
-### **Key Components**
+**Burn Scenario**:
 
-- **`pythUSDProxy`**: Stores the address of the API3 proxy contract that provides the latest PYTH/USD price.
-  
-- **`usdPerETH`**: A constant representing the fixed exchange rate of 2400 USD per ETH, used for calculating token minting and burning.
-
-- **`fetchPythPrice()`**: A function that interacts with the API3 proxy contract to get the latest PYTH/USD price.
-
-- **`mintToken()`**: Allows users to mint PythUSD tokens by sending ETH, with the amount of tokens calculated based on the current exchange rates.
-
-- **`burnToken()`**: Allows users to burn their PythUSD tokens to redeem ETH, calculated using the latest PYTH/USD price.
+```bash
+User burns 0.024 PUT
+ETH returned = (0.024 * 1000 * 1e8) / (2400 * 1e8) = 0.01 ETH
+```
 
 ---
 
-## **Deployment Details**
+## 🛠️ Installation & Local Deployment
 
-- **Network**: Zircuit Testnet
-- **Chain ID**: 48899
-- **Contracts Deployed**:
-  - `Api3ServerV1.sol`: `0x55Cf1079a115029a879ec3A11Ba5D453272eb61D`
-  - `ProxyFactory.sol`: `0x1DCE40DC2AfA7131C4838c8BFf635ae9d198d1cE`
+### Prerequisites
 
----
+- Node.js and npm installed.
+- MetaMask or another wallet connected to the **Zircuit Testnet**.
+- Funded test ETH wallet.
 
-## **Setup and Deployment**
+### Setup
 
-### **Prerequisites**
-
-- Node.js and npm installed on your system.
-- A wallet with some test ETH on the Zircuit Testnet.
-- Access to the API3 Market for obtaining proxy addresses.
-
-### **Steps to Deploy**
-
-1. **Clone the Repository**:
+1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-repo/pyth-usd-token.git
-   cd pyth-usd-token
+   git clone https://github.com/your-repo/pythusdtokens.git
+   cd pythusdtokens
    ```
 
-2. **Install Dependencies**:
+2. **Install Dependencies**
    ```bash
    npm install
    ```
 
-3. **Compile the Contract**:
+3. **Compile Contracts**
    ```bash
    npx hardhat compile
    ```
 
-4. **Deploy the Contract**:
-   Update the deployment script with your specific proxy address from the API3 Market, then run:
+4. **Deploy to Zircuit Testnet**
+   Customize `deploy.js` to insert the correct proxy address.
    ```bash
    npx hardhat run scripts/deploy.js --network zircuit
    ```
 
-5. **Verify Deployment**:
-   Verify the deployed contract on the Zircuit Testnet explorer.
+---
+
+## 🖥 Example Interaction via Scripts
+
+### Minting PUT Tokens
+
+```javascript
+await contract.mintToken(minTokensExpected, { value: ethers.utils.parseEther("0.01") });
+```
+
+### Burning PUT Tokens
+
+```javascript
+await contract.burnToken(amountToBurn);
+```
 
 ---
 
-## **How to Use the Contract**
+## 🧠 Potential Improvements
 
-1. **Minting Tokens**:
-   - Call the `mintToken()` function from a wallet interface or via a web3 client, sending the desired amount of ETH. Ensure to specify the minimum number of tokens you expect to receive.
-
-2. **Burning Tokens**:
-   - Call the `burnToken()` function, specifying the amount of tokens you wish to burn. The corresponding amount of ETH will be returned to your address.
-
----
-
-## **Potential Improvements and Considerations**
-
-- **Dynamic USD/ETH Rate**: Currently, the contract uses a hardcoded USD/ETH rate. Integrating a live data feed for USD/ETH from API3 or another oracle provider could enhance accuracy.
-
-- **Fallback Oracle**: Introduce a fallback mechanism in case the primary oracle fails to provide data.
+| Area | Enhancement |
+|:-----|:------------|
+| ⚡ Dynamic USD/ETH Rate | Replace hardcoded 2400 USD/ETH with Chainlink ETH/USD price feeds or API3 ETH/USD proxy. |
+| 🧰 Oracle Redundancy | Add multiple oracle fallback mechanisms. |
+| 🛡️ Price Staleness Checks | Add timestamp validation to ensure fresh price data. |
+| 📜 Events Logging | Emit `Minted` and `Burned` events for easier tracking on-chain. |
+| 📊 Frontend Dashboard | Build a React frontend to visualize mint/burn operations and live price feeds. |
 
 ---
 
-## **FAQ**
+## 🛠 Technologies Used
 
-### **1. What is PythUSDToken?**
-PythUSDToken is an ERC20 token that allows users to mint and burn tokens using ETH, with the value of the tokens tied to the real-time PYTH/USD price fetched from an API3 data feed.
+- **Solidity 0.8.x**
+- **Hardhat** for local development and deployment
+- **OpenZeppelin Contracts** (ERC20 base contract)
+- **API3 Oracle Services** (ServerV1, Proxy)
+- **Ethers.js** for wallet integration and contract interaction
 
-### **2. How is the token value determined?**
-The value is determined by the amount of ETH sent by the user, the fixed USD/ETH exchange rate (currently 2400 USD/ETH), and the real-time PYTH/USD price provided by the API3 data feed.
+---
 
-### **3. Can the USD/ETH rate be changed?**
-Yes, the contract currently uses a hardcoded value, but it can be updated to fetch live data from an oracle.
+## 📚 Documentation and References
 
-### **4. Is there a maximum supply of tokens?**
-Currently, there is no cap on the total supply of tokens. However, a cap can be introduced if needed.
+- [API3 Docs](https://docs.api3.org/)
+- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
+- [Zircuit Testnet Info](https://zircuit.com/)
+
+---
+
+Open to collaboration, optimization suggestions, and extending this project to real-world tokenized assets!
